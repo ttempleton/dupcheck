@@ -255,18 +255,10 @@ pub fn duplicate_files(files: &[PathBuf]) -> io::Result<Vec<FileHash>> {
         }
     }
 
-    // Remove hashes with only one file associated.
-    let mut remove: Vec<usize> = vec![];
-
-    for (i, hash) in hash_list.iter().enumerate() {
-        if hash.total_files() == 1 {
-            remove.push(i);
-        }
-    }
-
-    for r in remove.iter().rev() {
-        hash_list.remove(*r);
-    }
+    // Keep only the hashes with more than one file associated.
+    let hash_list = hash_list.into_iter()
+        .filter(|h| h.total_files() > 1)
+        .collect();
 
     Ok(hash_list)
 }
