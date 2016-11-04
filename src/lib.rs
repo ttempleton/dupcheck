@@ -256,9 +256,7 @@ pub fn duplicate_files(files: &[PathBuf]) -> io::Result<Vec<FileHash>> {
     }
 
     // Keep only the hashes with more than one file associated.
-    let hash_list = hash_list.into_iter()
-        .filter(|h| h.total_files() > 1)
-        .collect();
+    hash_list.retain(|h| h.total_files() > 1);
 
     Ok(hash_list)
 }
