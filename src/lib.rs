@@ -111,11 +111,7 @@ pub fn duplicates_of(files: &[PathBuf], dirs_opt: Option<&[PathBuf]>)
         }
 
         for dir in dirs {
-            let mut dir_files = try_with_path!(
-                dir.files_within(Some(&sizes)),
-                dir
-            );
-
+            let mut dir_files = try!(dir.files_within(Some(&sizes)));
             check_files.append(&mut dir_files);
         }
 
@@ -134,11 +130,7 @@ pub fn duplicates_of(files: &[PathBuf], dirs_opt: Option<&[PathBuf]>)
             let metadata = try_with_path!(file.metadata(), file);
             let sizes = vec![metadata.len()];
 
-            let mut dir_files = try_with_path!(
-                parent.files_within(Some(&sizes)),
-                parent
-            );
-
+            let mut dir_files = try!(parent.files_within(Some(&sizes)));
             check_files.append(&mut dir_files);
         }
     }
@@ -180,8 +172,7 @@ pub fn duplicates_within(dirs: &[PathBuf]) -> io::Result<Vec<FileHash>> {
     let mut check_files = vec![];
 
     for dir in dirs {
-        let mut dir_files = try_with_path!(dir.files_within(None), dir);
-
+        let mut dir_files = try!(dir.files_within(None));
         check_files.append(&mut dir_files);
     }
 

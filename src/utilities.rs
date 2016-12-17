@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -26,31 +27,28 @@ impl PathUtilities for PathBuf {
     }
 
     fn files_within(&self, sizes: Option<&[u64]>) -> io::Result<Vec<PathBuf>> {
-        let mut dirs: Vec<PathBuf> = vec![self.clone()];
-        let mut files: Vec<PathBuf> = vec![];
+        let read_dir = try_with_path!(self.read_dir(), self);
+        let mut files = Vec::new();
+        let sizes_vec = match sizes {
+            Some(sizes_slice) => Vec::from(sizes_slice),
+            None => Vec::new()
+        };
 
-        while !dirs.is_empty() {
-            let read = try!(dirs[0].read_dir());
-            let mut subdirs = vec![];
+        for entry in read_dir {
+            let entry = try_with_path!(entry, self);
+            let entry_path = entry.path();
 
-            for entry in read {
-                let entry_path = try!(entry).path();
+            if entry_path.is_file() {
+                let metadata = try_with_path!(entry_path.metadata(), entry_path);
+                let size = metadata.len();
 
-                if entry_path.is_file() {
-                    let size = try!(entry_path.metadata()).len();
-
-                    if sizes.is_none() || sizes.unwrap().contains(&size) {
-                        files.push(entry_path.clone());
-                    }
+                if sizes.is_none() || sizes_vec.contains(&size) {
+                    files.push(entry_path);
                 }
-
-                if entry_path.is_dir() {
-                    subdirs.push(entry_path.clone());
-                }
+            } else if entry_path.is_dir() {
+                let mut subdir_files = try!(entry_path.files_within(sizes));
+                files.append(&mut subdir_files);
             }
-
-            dirs.remove(0);
-            dirs.append(&mut subdirs);
         }
 
         Ok(files)
