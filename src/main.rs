@@ -12,17 +12,11 @@ fn values_to_paths(values: Option<Values>) -> Vec<PathBuf> {
     }
 }
 
-fn print_duplicates(dup_list: &[dupcheck::FileHash]) {
-    if dup_list.len() > 0 {
-        for duplicates in dup_list {
-            println!("");
-            println!("Duplicates of file {}:", duplicates.get_hash());
-            for file in duplicates.get_files() {
-                println!("{}", file.display());
-            }
-        }
-    } else {
-        println!("No duplicate files found.");
+fn print_duplicates(dup_list: &dupcheck::DupGroup) {
+    println!();
+    println!("Duplicates of file {}:", dup_list.get_hash());
+    for file in dup_list.get_files() {
+        println!("{}", file.display());
     }
 }
 
@@ -60,7 +54,7 @@ fn main() {
     let files = values_to_paths(matches.values_of("files"));
     let dirs = values_to_paths(matches.values_of("directories"));
 
-    let dup_result = match files.is_empty() {
+    let dup_results = match files.is_empty() {
         true => dupcheck::duplicates_within(&dirs),
         false => {
             let dirs_opt = match dirs.is_empty() {
@@ -71,9 +65,30 @@ fn main() {
         }
     };
 
-    match dup_result {
-        Ok(dup_list) => print_duplicates(&dup_list),
-        Err(dup_error) => println!("Error: {}", dup_error)
-    };
+    let total_files = dup_results.total_files();
+    let total_groups = dup_results.duplicates().len();
+    let dup_errors = dup_results.errors();
+    let dup_error_count = dup_errors.len();
+
+    println!("{} files found in {} group{}.",
+             total_files,
+             total_groups,
+             if total_groups != 1 { "s" } else { "" }
+    );
+
+    for dup_group in dup_results.duplicates() {
+        print_duplicates(&dup_group);
+    }
+
+    if dup_error_count > 0 {
+        println!("\n{} error{}.",
+                 dup_error_count,
+                 if dup_error_count != 1 { "s" } else { "" }
+        );
+
+        for dup_error in dup_errors {
+            println!("{}", dup_error)
+        }
+    }
 }
 
