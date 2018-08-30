@@ -55,13 +55,13 @@ fn main() {
     let dirs = values_to_paths(matches.values_of("directories"));
 
     let dup_results = match files.is_empty() {
-        true => dupcheck::duplicates_within(&dirs),
+        true => dupcheck::DupResults::within(&dirs),
         false => {
             let dirs_opt = match dirs.is_empty() {
                 true => None,
                 false => Some(&dirs[..])
             };
-            dupcheck::duplicates_of(&files, dirs_opt)
+            dupcheck::DupResults::of(&files, dirs_opt)
         }
     };
 
