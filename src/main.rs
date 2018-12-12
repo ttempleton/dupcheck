@@ -65,15 +65,15 @@ fn main() {
         }
     };
 
-    let total_files = dup_results.total_files();
-    let total_groups = dup_results.duplicates().len();
+    let file_count = dup_results.file_count();
+    let group_count = dup_results.duplicates().len();
     let dup_errors = dup_results.errors();
     let dup_error_count = dup_errors.len();
 
     println!("{} files found in {} group{}.",
-             total_files,
-             total_groups,
-             if total_groups != 1 { "s" } else { "" }
+             file_count,
+             group_count,
+             if group_count != 1 { "s" } else { "" }
     );
 
     for dup_group in dup_results.duplicates() {

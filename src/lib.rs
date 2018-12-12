@@ -265,7 +265,7 @@ impl DupResults {
         }
 
         // Keep only the hashes with more than one file associated.
-        dup_groups.retain(|h| h.total_files() > 1);
+        dup_groups.retain(|h| h.file_count() > 1);
 
         DupResults {
             duplicates: dup_groups,
@@ -288,11 +288,11 @@ impl DupResults {
     }
 
     /// Returns the total number of all paths within all duplicate groups.
-    pub fn total_files(&self) -> usize {
+    pub fn file_count(&self) -> usize {
         let mut total = 0;
 
         for group in &self.duplicates {
-            total += group.total_files();
+            total += group.file_count();
         }
 
         total
@@ -325,7 +325,7 @@ impl DupGroup {
     }
 
     /// Returns the number of files in this group.
-    pub fn total_files(&self) -> usize {
+    pub fn file_count(&self) -> usize {
         self.files.len()
     }
 }
