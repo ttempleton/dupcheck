@@ -22,17 +22,15 @@ pub struct DupResults {
 
 impl DupResults {
 
-    /// Checks for duplicates of specified files, optionally within specified
-    /// directories.
-    ///
-    /// If directories are specified, they will be checked; otherwise, a file's
-    /// parent directory will be checked.
+    /// Checks for any duplicates of the specified files within their parent
+    /// directories, or optionally within other specified directories, and
+    /// returns the results.
     ///
     /// # Errors
     ///
     /// The returned `DupResults` will contain errors if any `files` are not
-    /// files, any paths within `dirs_opt` are not directories or if there are
-    /// I/O errors while trying to read files or directories.
+    /// files, any paths within `dirs_opt` are not directories or if I/O errors
+    /// occur while trying to read files or directories.
     ///
     /// # Examples
     ///
@@ -132,17 +130,19 @@ impl DupResults {
         dup_results
     }
 
-    /// Checks for any duplicate files within the specified directories.
+    /// Checks for any duplicate files within the specified directories and
+    /// returns the results.
     ///
-    /// This checks for any duplicates amongst all files within all specified
+    /// This checks for any duplicates among all files within all specified
     /// directories.  If multiple directories need to be checked separately,
-    /// this function will need to be called for each directory individually.
+    /// `DupResults::within()` will need to be called individually for each
+    /// directory.
     ///
     /// # Errors
     ///
     /// The returned `DupResults` will contain errors if any paths within `dirs`
-    /// are not directories or if there are I/O errors while trying to read
-    /// files or directories.
+    /// are not directories or if I/O errors occur while trying to read files
+    /// or directories.
     ///
     /// # Examples
     ///
@@ -181,7 +181,8 @@ impl DupResults {
         dup_results
     }
 
-    /// Checks `files` for any duplicate files.
+    /// Checks for any duplicates among the specified files and returns the
+    /// results.
     ///
     /// Returns `DupResults`, which contains `DupGroup`s of the `files` found to
     /// be duplicates.
@@ -189,7 +190,7 @@ impl DupResults {
     /// # Errors
     ///
     /// The returned `DupResults` will contain errors if any `files` are not
-    /// files or if there are I/O errors while trying to read files.
+    /// files or if I/O errors occur while trying to read files.
     ///
     /// # Examples
     ///
