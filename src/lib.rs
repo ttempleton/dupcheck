@@ -1,16 +1,16 @@
 //! Duplicate file checker.
 #![deny(missing_docs)]
 
-extern crate sha2;
-
 #[macro_use]
 mod macros;
 mod utilities;
 
-use std::error::Error;
-use std::io;
-use std::path::PathBuf;
-use utilities::PathUtilities;
+use std::{
+    error::Error,
+    io,
+    path::PathBuf,
+};
+use crate::utilities::PathUtilities;
 
 /// Results of a duplicate file check.
 ///

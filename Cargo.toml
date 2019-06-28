@@ -8,6 +8,7 @@ homepage = "https://github.com/ttempleton/dupcheck"
 repository = "https://github.com/ttempleton/dupcheck.git"
 readme = "README.md"
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 clap = "~2.19.2"

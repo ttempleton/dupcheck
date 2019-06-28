@@ -1,9 +1,12 @@
-extern crate dupcheck;
-#[macro_use]
-extern crate clap;
-
 use std::path::PathBuf;
-use clap::{App, Arg, ArgGroup, Values};
+use clap::{
+    App,
+    Arg,
+    ArgGroup,
+    Values,
+    crate_authors,
+    crate_version,
+};
 
 fn values_to_paths(values: Option<Values>) -> Vec<PathBuf> {
     match values {
