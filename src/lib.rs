@@ -12,11 +12,13 @@ use std::{
 };
 use crate::utilities::PathUtilities;
 
-/// Results of a duplicate file check.
-///
-/// Returns any duplicate file groups found and any errors encountered.
+/// Results of a duplicate file check, containing any duplicate file groups
+/// found and any errors encountered.
 pub struct DupResults {
+    /// Groups of paths to duplicate files.
     duplicates: Vec<DupGroup>,
+
+    /// Errors encountered while checking for duplicate files.
     errors: Vec<io::Error>
 }
 
@@ -151,7 +153,7 @@ impl DupResults {
     ///
     /// let dirs = vec![
     ///     PathBuf::from("foo"),
-    ///     PathBuf::from("bar")
+    ///     PathBuf::from("bar"),
     /// ];
     ///
     /// let dup_result = dupcheck::DupResults::within(&dirs);
@@ -199,7 +201,7 @@ impl DupResults {
     ///
     /// let files = vec![
     ///     PathBuf::from("foo.txt"),
-    ///     PathBuf::from("bar.txt")
+    ///     PathBuf::from("bar.txt"),
     /// ];
     ///
     /// let dup_result = dupcheck::DupResults::files(&files);
@@ -305,17 +307,18 @@ impl DupResults {
 pub struct DupGroup {
     /// The SHA-256 hash of the files in this group.
     hash: String,
-    /// The duplicate files.
+
+    /// The paths to the duplicate files.
     files: Vec<PathBuf>
 }
 
 impl DupGroup {
-    /// Returns the SHA-256 hash.
+    /// Returns the SHA-256 hash of the files in this group.
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
 
-    /// Returns a reference to the group's files.
+    /// Returns a reference to the group's file paths.
     pub fn get_files(&self) -> &Vec<PathBuf> {
         &self.files
     }
@@ -325,7 +328,7 @@ impl DupGroup {
         self.files.push(file);
     }
 
-    /// Returns the number of files in this group.
+    /// Returns the number of file paths in this group.
     pub fn file_count(&self) -> usize {
         self.files.len()
     }
