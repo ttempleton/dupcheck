@@ -26,6 +26,6 @@ See the [documentation](https://docs.rs/dupcheck) for more information.
 
 dupcheck uses the following crates:
 
-* [sha2 v0.1.2](https://crates.io/crates/sha2/0.1.2)
-* [clap](https://crates.io/crates/clap)
+* [sha2](https://crates.io/crates/sha2) ~0.8.0
+* [clap](https://crates.io/crates/clap) ~2.33.0
 

@@ -5,8 +5,8 @@ use std::{
     path::PathBuf,
 };
 use sha2::{
-    digest::Digest,
-    sha2::Sha256,
+    Digest,
+    Sha256,
 };
 
 pub trait PathUtilities {
@@ -27,7 +27,7 @@ impl PathUtilities for PathBuf {
             hasher.input(&[byte]);
         }
 
-        Ok(hasher.result_str())
+        Ok(format!("{:x}", hasher.result()))
     }
 
     fn files_within(&self, sizes: Option<&[u64]>) -> io::Result<Vec<PathBuf>> {
