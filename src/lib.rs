@@ -23,6 +23,13 @@ pub struct DupResults {
 }
 
 impl DupResults {
+    /// Creates a new, empty `DupResults`.
+    pub fn new() -> DupResults {
+        DupResults {
+            duplicates: Vec::new(),
+            errors: Vec::new(),
+        }
+    }
 
     /// Checks for any duplicates of the specified files within their parent
     /// directories, or optionally within other specified directories, and
@@ -42,7 +49,7 @@ impl DupResults {
     /// use std::path::PathBuf;
     ///
     /// let files = vec![PathBuf::from("foo.txt")];
-    /// let dup_result = dupcheck::DupResults::of(&files, None);
+    /// let dup_result = dupcheck::DupResults::new().of(&files, None);
     /// ```
     ///
     /// Check a file for duplicates within some other directory:
@@ -52,15 +59,14 @@ impl DupResults {
     ///
     /// let files = vec![PathBuf::from("foo.txt")];
     /// let dirs = vec![PathBuf::from("bar")];
-    /// let dup_result = dupcheck::DupResults::of(&files, Some(&dirs));
+    /// let dup_result = dupcheck::DupResults::new().of(&files, Some(&dirs));
     /// ```
-    pub fn of(files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> DupResults {
-        let mut dup_errors = vec![];
+    pub fn of(mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> DupResults {
         let mut check_files = vec![];
 
         // Make sure the files are files.
         for path in files.iter().filter(|p| !p.is_file()) {
-            dup_errors.push(io::Error::new(
+            self.errors.push(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a file", path.display())
             ));
@@ -71,7 +77,7 @@ impl DupResults {
             // Check all directories for all filesizes.
             // ...but first, these are all directories, right?
             for path in dirs.iter().filter(|p| !p.is_dir()) {
-                dup_errors.push(io::Error::new(
+                self.errors.push(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("{} is not a directory", path.display())
                 ));
@@ -82,7 +88,7 @@ impl DupResults {
             for file in files.iter().filter(|f| f.is_file()) {
                 match file.metadata() {
                     Ok(metadata) => sizes.push(metadata.len()),
-                    Err(e) => dup_errors.push(io::Error::new(
+                    Err(e) => self.errors.push(io::Error::new(
                         e.kind(),
                         format!("{} ({})", file.display(), e.description())
                     ))
@@ -92,7 +98,7 @@ impl DupResults {
             for dir in dirs.iter().filter(|d| d.is_dir()) {
                 match dir.files_within(Some(&sizes)) {
                     Ok(mut files) => check_files.append(&mut files),
-                    Err(e) => dup_errors.push(e)
+                    Err(e) => self.errors.push(e)
                 }
             }
 
@@ -111,7 +117,7 @@ impl DupResults {
                 let sizes = match file.metadata() {
                     Ok(metadata) => vec![metadata.len()],
                     Err(e) => {
-                        dup_errors.push(io::Error::new(
+                        self.errors.push(io::Error::new(
                             e.kind(),
                             format!("{} ({})", file.display(), e.description())
                         ));
@@ -121,15 +127,12 @@ impl DupResults {
 
                 match parent.files_within(Some(&sizes)) {
                     Ok(mut files) => check_files.append(&mut files),
-                    Err(e) => dup_errors.push(e)
+                    Err(e) => self.errors.push(e)
                 };
             }
         }
 
-        let mut dup_results = Self::files(&check_files);
-        dup_results.add_errors(&mut dup_errors);
-
-        dup_results
+        self.files(&check_files)
     }
 
     /// Checks for any duplicate files within the specified directories and
@@ -137,8 +140,12 @@ impl DupResults {
     ///
     /// This checks for any duplicates among all files within all specified
     /// directories.  If multiple directories need to be checked separately,
-    /// `DupResults::within()` will need to be called individually for each
-    /// directory.
+    /// `within()` will need to be called individually for each case.
+    ///
+    /// Note that calling `within()` multiple times with the same `DupResults`
+    /// will merge the results of all checks, adding newly-found duplicates to
+    /// pre-existing `DupGroup`s if other duplicates of that file had been found
+    /// in previous checks.
     ///
     /// # Errors
     ///
@@ -148,6 +155,8 @@ impl DupResults {
     ///
     /// # Examples
     ///
+    /// Check all files within two directories for any duplicates:
+    ///
     /// ```
     /// use std::path::PathBuf;
     ///
@@ -156,13 +165,22 @@ impl DupResults {
     ///     PathBuf::from("bar"),
     /// ];
     ///
-    /// let dup_result = dupcheck::DupResults::within(&dirs);
+    /// let dup_result = dupcheck::DupResults::new().within(&dirs);
     /// ```
-    pub fn within(dirs: &[PathBuf]) -> DupResults {
-        let mut dup_errors = vec![];
-
+    ///
+    /// Check two directories separately for any duplicate files:
+    ///
+    /// ```
+    /// use std::path::PathBuf;
+    ///
+    /// let dup_result = dupcheck::DupResults::new()
+    ///     .within(&[PathBuf::from("foo")])
+    ///     .within(&[PathBuf::from("bar")]);
+    /// ```
+    pub fn within(mut self, dirs: &[PathBuf]) -> DupResults {
+        // Ensure these are actually directories.
         for path in dirs.iter().filter(|p| !p.is_dir()) {
-            dup_errors.push(io::Error::new(
+            self.errors.push(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a directory", path.display())
             ));
@@ -173,14 +191,11 @@ impl DupResults {
         for dir in dirs.iter().filter(|p| p.is_dir()) {
             match dir.files_within(None) {
                 Ok(mut files) => check_files.append(&mut files),
-                Err(e) => dup_errors.push(e)
+                Err(e) => self.errors.push(e)
             };
         }
 
-        let mut dup_results = Self::files(&check_files);
-        dup_results.add_errors(&mut dup_errors);
-
-        dup_results
+        self.files(&check_files)
     }
 
     /// Checks for any duplicates among the specified files and returns the
@@ -204,29 +219,27 @@ impl DupResults {
     ///     PathBuf::from("bar.txt"),
     /// ];
     ///
-    /// let dup_result = dupcheck::DupResults::files(&files);
+    /// let dup_result = dupcheck::DupResults::new().files(&files);
     /// ```
-    pub fn files(files: &[PathBuf]) -> DupResults {
-        let mut dup_errors = vec![];
-
+    pub fn files(mut self, files: &[PathBuf]) -> DupResults {
         // Make sure we're dealing with files.
         for path in files.iter().filter(|p| !p.is_file()) {
-            dup_errors.push(io::Error::new(
+            self.errors.push(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a file", path.display())
             ));
         }
 
-        // Organise the files according to their size.  Any files with a unique
-        // size within the check list can't be duplicates, so this will make
-        // sure we don't waste time on hash checks of those files later.
-        let mut sizes: Vec<(u64, Vec<PathBuf>)> = vec![];
+        // Organise the file paths according to file sizes.  Any file with a
+        // unique size within the check list can't be a duplicate, so this will
+        // ensure we don't waste time on hash checks of those files later.
+        let mut sizes: Vec<(u64, Vec<PathBuf>)> = Vec::new();
 
         for file in files.iter().filter(|p| p.is_file()) {
             let size = match file.metadata() {
                 Ok(metadata) => metadata.len(),
                 Err(e) => {
-                    dup_errors.push(io::Error::new(
+                    self.errors.push(io::Error::new(
                         e.kind(),
                         format!("{} ({})", file.display(), e.description())
                     ));
@@ -241,39 +254,40 @@ impl DupResults {
         }
 
         // Check hashes of files where more than one file of its size was found.
-        let mut dup_groups: Vec<DupGroup> = vec![];
-
         for size in sizes.iter().filter(|s| s.1.len() > 1) {
 
             for file in &size.1 {
-                let hash = match file.sha256() {
-                    Ok(h) => h,
-                    Err(e) => {
-                        dup_errors.push(io::Error::new(
-                            e.kind(),
-                            format!("{} ({})", file.display(), e.description())
-                        ));
-                        continue;
-                    }
-                };
 
-                match dup_groups.iter().position(|h| h.hash == hash) {
-                    Some(i) => dup_groups[i].add_file(file.clone()),
-                    None => dup_groups.push(DupGroup {
-                        hash: hash,
-                        files: vec![file.clone()]
-                    })
-                };
+                // If this isn't the first check for these `DupResults`, ensure
+                // this file is only checked if its path hasn't been added in a
+                // previous check.
+                if !self.contains(file) {
+                    let hash = match file.sha256() {
+                        Ok(h) => h,
+                        Err(e) => {
+                            self.errors.push(io::Error::new(
+                                e.kind(),
+                                format!("{} ({})", file.display(), e.description())
+                            ));
+                            continue;
+                        }
+                    };
+
+                    match self.duplicates.iter().position(|h| h.hash == hash) {
+                        Some(i) => self.duplicates[i].add_file(file.clone()),
+                        None => self.duplicates.push(DupGroup {
+                            hash: hash,
+                            files: vec![file.clone()]
+                        })
+                    };
+                }
             }
         }
 
-        // Keep only the hashes with more than one file associated.
-        dup_groups.retain(|h| h.file_count() > 1);
+        // Keep only the groups with more than one file.
+        self.duplicates.retain(|h| h.file_count() > 1);
 
-        DupResults {
-            duplicates: dup_groups,
-            errors: dup_errors
-        }
+        self
     }
 
     /// Returns a reference to the duplicate file groups.
@@ -286,10 +300,6 @@ impl DupResults {
         &self.errors
     }
 
-    fn add_errors(&mut self, mut errors: &mut Vec<io::Error>) {
-        self.errors.append(&mut errors);
-    }
-
     /// Returns the total number of all paths within all duplicate groups.
     pub fn file_count(&self) -> usize {
         let mut total = 0;
@@ -299,6 +309,20 @@ impl DupResults {
         }
 
         total
+    }
+
+    /// Returns whether any `DupGroup`s contain the given file path.
+    fn contains(&self, path: &PathBuf) -> bool {
+        let mut contains = false;
+
+        for group in &self.duplicates {
+            if group.contains(path) {
+                contains = true;
+                break;
+            }
+        }
+
+        contains
     }
 }
 
@@ -331,6 +355,10 @@ impl DupGroup {
     /// Returns the number of file paths in this group.
     pub fn file_count(&self) -> usize {
         self.files.len()
+    }
+
+    fn contains(&self, path: &PathBuf) -> bool {
+        self.files.contains(path)
     }
 }
 
