@@ -291,12 +291,12 @@ impl DupResults {
     }
 
     /// Returns a reference to the duplicate file groups.
-    pub fn duplicates(&self) -> &Vec<DupGroup> {
+    pub fn duplicates(&self) -> &[DupGroup] {
         &self.duplicates
     }
 
     /// Returns a reference to the errors.
-    pub fn errors(&self) -> &Vec<io::Error> {
+    pub fn errors(&self) -> &[io::Error] {
         &self.errors
     }
 
@@ -343,7 +343,7 @@ impl DupGroup {
     }
 
     /// Returns a reference to the group's file paths.
-    pub fn get_files(&self) -> &Vec<PathBuf> {
+    pub fn get_files(&self) -> &[PathBuf] {
         &self.files
     }
 
