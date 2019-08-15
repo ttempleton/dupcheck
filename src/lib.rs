@@ -95,11 +95,14 @@ impl DupResults {
                 };
             }
 
-            for dir in dirs.iter().filter(|d| d.is_dir()) {
-                match dir.files_within(Some(&sizes)) {
-                    Ok(mut files) => check_files.append(&mut files),
-                    Err(e) => self.errors.push(e)
-                }
+            let (mut dirs_files, mut errors) = self.get_file_paths_from_dirs(dirs, Some(&sizes));
+
+            if !dirs_files.is_empty() {
+                check_files.append(&mut dirs_files);
+            }
+
+            if !errors.is_empty() {
+                self.errors.append(&mut errors);
             }
 
             // If the directories aren't ancestors of the files being checked,
@@ -186,16 +189,13 @@ impl DupResults {
             ));
         }
 
-        let mut check_files = vec![];
+        let (files, mut errors) = self.get_file_paths_from_dirs(dirs, None);
 
-        for dir in dirs.iter().filter(|p| p.is_dir()) {
-            match dir.files_within(None) {
-                Ok(mut files) => check_files.append(&mut files),
-                Err(e) => self.errors.push(e)
-            };
+        if !errors.is_empty() {
+            self.errors.append(&mut errors);
         }
 
-        self.files(&check_files)
+        self.files(&files)
     }
 
     /// Checks for any duplicates among the specified files and returns the
@@ -309,6 +309,25 @@ impl DupResults {
         }
 
         total
+    }
+
+    /// Returns the paths of all files in the given directories, optionally of
+    /// given sizes; and also returns any errors encountered while finding the
+    /// file paths.
+    fn get_file_paths_from_dirs(&self, dirs: &[PathBuf], sizes: Option<&[u64]>)
+        -> (Vec<PathBuf>, Vec<io::Error>)
+    {
+        let mut files = Vec::new();
+        let mut errors = Vec::new();
+
+        for dir in dirs.iter().filter(|p| p.is_dir()) {
+            match dir.files_within(sizes) {
+                Ok(mut dir_files) => files.append(&mut dir_files),
+                Err(e) => errors.push(e),
+            };
+        }
+
+        (files, errors)
     }
 
     /// Returns whether any `DupGroup`s contain the given file path.
