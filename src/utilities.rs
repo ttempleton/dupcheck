@@ -1,12 +1,9 @@
+use sha2::{Digest, Sha256};
 use std::{
     error::Error,
     fs::File,
     io::{self, Read},
     path::PathBuf,
-};
-use sha2::{
-    Digest,
-    Sha256,
 };
 
 pub trait PathUtilities {
@@ -35,7 +32,7 @@ impl PathUtilities for PathBuf {
         let mut files = Vec::new();
         let sizes_vec = match sizes {
             Some(sizes_slice) => Vec::from(sizes_slice),
-            None => Vec::new()
+            None => Vec::new(),
         };
 
         for entry in read_dir {
@@ -58,4 +55,3 @@ impl PathUtilities for PathBuf {
         Ok(files)
     }
 }
-
