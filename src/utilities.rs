@@ -1,10 +1,8 @@
 use sha2::{Digest, Sha256};
-use std::{
-    error::Error,
-    fs::File,
-    io::{self, Read},
-    path::PathBuf,
-};
+use std::error::Error;
+use std::fs;
+use std::io;
+use std::path::PathBuf;
 
 pub trait PathUtilities {
     /// Returns a file's SHA-256 hash.
@@ -16,13 +14,9 @@ pub trait PathUtilities {
 
 impl PathUtilities for PathBuf {
     fn sha256(&self) -> io::Result<String> {
-        let file = File::open(&self)?;
+        let bytes = fs::read(self.as_path())?;
         let mut hasher = Sha256::new();
-
-        for byte in file.bytes() {
-            let byte = byte?;
-            hasher.input(&[byte]);
-        }
+        hasher.input(&bytes);
 
         Ok(format!("{:x}", hasher.result()))
     }
