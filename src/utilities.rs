@@ -4,7 +4,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
-pub trait PathUtilities {
+pub(crate) trait PathUtilities {
     /// Returns a file's SHA-256 hash.
     fn sha256(&self) -> io::Result<String>;
 
