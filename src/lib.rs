@@ -260,7 +260,7 @@ impl DupResults {
                 // this file is only checked if its path hasn't been added in a
                 // previous check.
                 if !self.contains(file) {
-                    let hash = match file.sha256() {
+                    let hash = match file.blake2() {
                         Ok(h) => h,
                         Err(e) => {
                             self.errors.push(io::Error::new(
@@ -348,7 +348,7 @@ impl DupResults {
 /// A group of duplicate files.
 #[derive(Debug)]
 pub struct DupGroup {
-    /// The SHA-256 hash of the files in this group.
+    /// The Blake2 hash of the files in this group.
     hash: String,
 
     /// The paths to the duplicate files.
@@ -356,7 +356,7 @@ pub struct DupGroup {
 }
 
 impl DupGroup {
-    /// Returns the SHA-256 hash of the files in this group.
+    /// Returns the Blake2 hash of the files in this group.
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
