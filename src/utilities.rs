@@ -1,21 +1,21 @@
-use sha2::{Digest, Sha256};
+use blake2::{Blake2b, Digest};
 use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
 
 pub(crate) trait PathUtilities {
-    /// Returns a file's SHA-256 hash.
-    fn sha256(&self) -> io::Result<String>;
+    /// Returns a file's Blake2 hash.
+    fn blake2(&self) -> io::Result<String>;
 
     /// Returns all files within a directory, optionally of certain `sizes`.
     fn files_within(&self, sizes: Option<&[u64]>) -> io::Result<Vec<PathBuf>>;
 }
 
 impl PathUtilities for PathBuf {
-    fn sha256(&self) -> io::Result<String> {
+    fn blake2(&self) -> io::Result<String> {
         let bytes = fs::read(self.as_path())?;
-        let mut hasher = Sha256::new();
+        let mut hasher = Blake2b::new();
         hasher.input(&bytes);
 
         Ok(format!("{:x}", hasher.result()))
