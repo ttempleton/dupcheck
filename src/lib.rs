@@ -22,8 +22,8 @@ impl DupResults {
     /// Creates a new, empty `DupResults`.
     pub fn new() -> DupResults {
         DupResults {
-            duplicates: Vec::new(),
-            errors: Vec::new(),
+            duplicates: vec![],
+            errors: vec![],
         }
     }
 
@@ -250,7 +250,7 @@ impl DupResults {
         // Organise the file paths according to file sizes.  Any file with a
         // unique size within the check list can't be a duplicate, so this will
         // ensure we don't waste time on hash checks of those files later.
-        let mut sizes: Vec<(u64, Vec<PathBuf>)> = Vec::new();
+        let mut sizes: Vec<(u64, Vec<PathBuf>)> = vec![];
 
         for file in files.iter().filter(|p| p.is_file()) {
             let size = match file.metadata() {
@@ -334,8 +334,8 @@ impl DupResults {
         dirs: &[PathBuf],
         sizes: Option<&[u64]>,
     ) -> (Vec<PathBuf>, Vec<io::Error>) {
-        let mut files = Vec::new();
-        let mut errors = Vec::new();
+        let mut files = vec![];
+        let mut errors = vec![];
 
         for dir in dirs {
             match dir.files_within(sizes) {

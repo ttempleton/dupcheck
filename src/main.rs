@@ -5,7 +5,7 @@ use std::path::PathBuf;
 fn values_to_paths(values: Option<Values>) -> Vec<PathBuf> {
     match values {
         Some(v) => v.map(|p| PathBuf::from(p)).collect::<Vec<PathBuf>>(),
-        None => Vec::new(),
+        None => vec![],
     }
 }
 

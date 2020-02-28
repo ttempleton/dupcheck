@@ -23,10 +23,10 @@ impl PathUtilities for PathBuf {
 
     fn files_within(&self, sizes: Option<&[u64]>) -> io::Result<Vec<PathBuf>> {
         let read_dir = try_with_path!(self.read_dir(), self);
-        let mut files = Vec::new();
+        let mut files = vec![];
         let sizes_vec = match sizes {
             Some(sizes_slice) => Vec::from(sizes_slice),
-            None => Vec::new(),
+            None => vec![],
         };
 
         for entry in read_dir {
