@@ -45,7 +45,11 @@ impl DupResults {
     /// use std::path::PathBuf;
     ///
     /// let files = vec![PathBuf::from("foo.txt")];
-    /// let dup_result = dupcheck::DupResults::new().of(&files, None);
+    /// let mut dup_result = dupcheck::DupResults::new();
+    ///
+    /// if let Err(dup_error) = dup_result.of(&files, None) {
+    ///     // Error handling
+    /// }
     /// ```
     ///
     /// Check a file for duplicates within some other directory:
@@ -55,9 +59,13 @@ impl DupResults {
     ///
     /// let files = vec![PathBuf::from("foo.txt")];
     /// let dirs = vec![PathBuf::from("bar")];
-    /// let dup_result = dupcheck::DupResults::new().of(&files, Some(&dirs));
+    /// let mut dup_result = dupcheck::DupResults::new();
+    ///
+    /// if let Err(dup_error) = dup_result.of(&files, Some(&dirs)) {
+    ///     // Error handling
+    /// }
     /// ```
-    pub fn of(mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> DupResults {
+    pub fn of(&mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> io::Result<()> {
         let mut check_files = vec![];
 
         // Add errors for any `files` that are not actually files.
@@ -163,12 +171,15 @@ impl DupResults {
     /// ```
     /// use std::path::PathBuf;
     ///
+    /// let mut dup_result = dupcheck::DupResults::new();
     /// let dirs = vec![
     ///     PathBuf::from("foo"),
     ///     PathBuf::from("bar"),
     /// ];
     ///
-    /// let dup_result = dupcheck::DupResults::new().within(&dirs);
+    /// if let Err(dup_error) = dup_result.within(&dirs) {
+    ///     // Error handling
+    /// }
     /// ```
     ///
     /// Check two directories separately for any duplicate files:
@@ -176,11 +187,19 @@ impl DupResults {
     /// ```
     /// use std::path::PathBuf;
     ///
-    /// let dup_result = dupcheck::DupResults::new()
-    ///     .within(&[PathBuf::from("foo")])
-    ///     .within(&[PathBuf::from("bar")]);
+    /// let mut dup_result = dupcheck::DupResults::new();
+    /// let dirs = [
+    ///     [PathBuf::from("foo")],
+    ///     [PathBuf::from("bar")],
+    /// ];
+    ///
+    /// for dir in &dirs {
+    ///     if let Err(dup_error) = dup_result.within(dir) {
+    ///         // Error handling
+    ///     }
+    /// }
     /// ```
-    pub fn within(mut self, dirs: &[PathBuf]) -> DupResults {
+    pub fn within(&mut self, dirs: &[PathBuf]) -> io::Result<()> {
         // Ensure these are actually directories.
         for path in dirs.iter().filter(|p| !p.is_dir()) {
             self.errors.push(io::Error::new(
@@ -214,14 +233,17 @@ impl DupResults {
     /// ```
     /// use std::path::PathBuf;
     ///
+    /// let mut dup_result = dupcheck::DupResults::new();
     /// let files = vec![
     ///     PathBuf::from("foo.txt"),
     ///     PathBuf::from("bar.txt"),
     /// ];
     ///
-    /// let dup_result = dupcheck::DupResults::new().files(&files);
+    /// if let Err(dup_error) = dup_result.files(&files) {
+    ///     // Error handling
+    /// }
     /// ```
-    pub fn files(mut self, files: &[PathBuf]) -> DupResults {
+    pub fn files(&mut self, files: &[PathBuf]) -> io::Result<()> {
         // Make sure we're dealing with files.
         for path in files.iter().filter(|p| !p.is_file()) {
             self.errors.push(io::Error::new(
@@ -285,7 +307,7 @@ impl DupResults {
         // Keep only the groups with more than one file.
         self.duplicates.retain(|h| h.file_count() > 1);
 
-        self
+        Ok(())
     }
 
     /// Returns a reference to the duplicate file groups.
