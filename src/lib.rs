@@ -66,35 +66,30 @@ impl DupResults {
     /// }
     /// ```
     pub fn of(&mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> io::Result<()> {
-        let mut check_files = vec![];
-
-        // Add errors for any `files` that are not actually files.
+        // Return an error if any `files` are not files, or `dirs_opt` contains
+        // any paths that are not directories.
         for path in files.iter().filter(|p| !p.is_file()) {
-            self.errors.push(io::Error::new(
+            return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a file", path.display()),
             ));
         }
 
-        // Then make sure we only use the actual files.
-        let files = files
-            .iter()
-            .filter(|p| p.is_file())
-            .collect::<Vec<&PathBuf>>();
-
         if let Some(dirs) = dirs_opt {
-            // Check all directories for all filesizes.
-            // ...but first, these are all directories, right?
             for path in dirs.iter().filter(|p| !p.is_dir()) {
-                self.errors.push(io::Error::new(
+                return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("{} is not a directory", path.display()),
                 ));
             }
+        }
 
+        let mut check_files = vec![];
+
+        if let Some(dirs) = dirs_opt {
             let mut sizes = vec![];
 
-            for file in &files {
+            for file in files {
                 match file.metadata() {
                     Ok(metadata) => sizes.push(metadata.len()),
                     Err(e) => self.errors.push(io::Error::new(
@@ -116,14 +111,14 @@ impl DupResults {
 
             // If the directories aren't ancestors of the files being checked,
             // the files won't be in the check list, so we need to add them.
-            for file in &files {
+            for file in files {
                 if !check_files.contains(file) {
                     check_files.push(file.to_path_buf());
                 }
             }
         } else {
             // Check only a file's parent directory for other files of its size.
-            for file in &files {
+            for file in files {
                 let parent = file.parent().unwrap().to_path_buf();
                 let sizes = match file.metadata() {
                     Ok(metadata) => vec![metadata.len()],
@@ -200,9 +195,9 @@ impl DupResults {
     /// }
     /// ```
     pub fn within(&mut self, dirs: &[PathBuf]) -> io::Result<()> {
-        // Ensure these are actually directories.
+        // Ensure all `dirs` are directories.
         for path in dirs.iter().filter(|p| !p.is_dir()) {
-            self.errors.push(io::Error::new(
+            return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a directory", path.display()),
             ));
@@ -246,7 +241,7 @@ impl DupResults {
     pub fn files(&mut self, files: &[PathBuf]) -> io::Result<()> {
         // Make sure we're dealing with files.
         for path in files.iter().filter(|p| !p.is_file()) {
-            self.errors.push(io::Error::new(
+            return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} is not a file", path.display()),
             ));
@@ -342,7 +337,7 @@ impl DupResults {
         let mut files = Vec::new();
         let mut errors = Vec::new();
 
-        for dir in dirs.iter().filter(|p| p.is_dir()) {
+        for dir in dirs {
             match dir.files_within(sizes) {
                 Ok(mut dir_files) => files.append(&mut dir_files),
                 Err(e) => errors.push(e),
