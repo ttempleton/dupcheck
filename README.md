@@ -8,11 +8,11 @@ A duplicate file checker.  dupcheck can search for duplicates of given files wit
 dupcheck <--of <files>...|--within <directories>...>
 ```
 
-* `--of` and `--within` used together will check the directories for duplicates of the files.
-* `--of` used without `--within` will check the files' parent directories.
-* `--within` without `--of` will check the directories for any duplicate files.
+* `--of` and `--within` used together will check for duplicates of the given files within the given directories.
+* `--of` used without `--within` will check for duplicates of the files within the files' parent directories.
+* `--within` used without `--of` will check the directories for any duplicate files.
 
-If dupcheck finds duplicate files, it will print the results in groups identified by the files' Blake2 hashes.
+If dupcheck finds duplicate files, it will print the found files in groups identified by the files' Blake2 hashes.
 
 ## Library
 
@@ -28,4 +28,3 @@ dupcheck uses the following crates:
 
 * [blake2](https://crates.io/crates/blake2) ~0.8.1
 * [clap](https://crates.io/crates/clap) ~2.33.0
-
