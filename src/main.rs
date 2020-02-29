@@ -93,7 +93,7 @@ fn main() {
 
         if dup_error_count > 0 {
             println!(
-                "\n{} error{}.",
+                "\n{} error{} occurred during check.",
                 dup_error_count,
                 if dup_error_count != 1 { "s" } else { "" }
             );
@@ -103,6 +103,6 @@ fn main() {
             }
         }
     } else if let Err(dup_error) = dup_result {
-        println!("{}", dup_error);
+        println!("Error: {}", dup_error);
     }
 }
