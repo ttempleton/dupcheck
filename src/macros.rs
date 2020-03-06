@@ -4,12 +4,7 @@ macro_rules! try_with_path {
     ($x:expr, $y:expr) => {{
         match $x {
             Ok(r) => r,
-            Err(e) => {
-                return Err(io::Error::new(
-                    e.kind(),
-                    format!("{} ({})", $y.display(), e.description()),
-                ))
-            }
+            Err(e) => return Err(DupError::new($y.to_path_buf(), e)),
         }
     }};
 }

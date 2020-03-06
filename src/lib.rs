@@ -3,10 +3,12 @@
 
 #[macro_use]
 mod macros;
+mod duperror;
 mod utilities;
 
+use crate::duperror::DupError;
 use crate::utilities::PathUtilities;
-use std::{error::Error, io, path::PathBuf};
+use std::{io, path::PathBuf};
 
 /// Results of a duplicate file check, containing any duplicate file groups
 /// found and any errors encountered.
@@ -15,7 +17,7 @@ pub struct DupResults {
     duplicates: Vec<DupGroup>,
 
     /// Errors encountered while checking for duplicate files.
-    errors: Vec<io::Error>,
+    errors: Vec<DupError>,
 }
 
 impl DupResults {
@@ -92,10 +94,7 @@ impl DupResults {
             for file in files {
                 match file.metadata() {
                     Ok(metadata) => sizes.push(metadata.len()),
-                    Err(e) => self.errors.push(io::Error::new(
-                        e.kind(),
-                        format!("{} ({})", file.display(), e.description()),
-                    )),
+                    Err(e) => self.errors.push(DupError::new(file.to_path_buf(), e)),
                 };
             }
 
@@ -123,10 +122,7 @@ impl DupResults {
                 let sizes = match file.metadata() {
                     Ok(metadata) => vec![metadata.len()],
                     Err(e) => {
-                        self.errors.push(io::Error::new(
-                            e.kind(),
-                            format!("{} ({})", file.display(), e.description()),
-                        ));
+                        self.errors.push(DupError::new(file.to_path_buf(), e));
                         continue;
                     }
                 };
@@ -256,10 +252,7 @@ impl DupResults {
             let size = match file.metadata() {
                 Ok(metadata) => metadata.len(),
                 Err(e) => {
-                    self.errors.push(io::Error::new(
-                        e.kind(),
-                        format!("{} ({})", file.display(), e.description()),
-                    ));
+                    self.errors.push(DupError::new(file.to_path_buf(), e));
                     continue;
                 }
             };
@@ -280,10 +273,7 @@ impl DupResults {
                     let hash = match file.blake2() {
                         Ok(h) => h,
                         Err(e) => {
-                            self.errors.push(io::Error::new(
-                                e.kind(),
-                                format!("{} ({})", file.display(), e.description()),
-                            ));
+                            self.errors.push(DupError::new(file.to_path_buf(), e));
                             continue;
                         }
                     };
@@ -311,7 +301,7 @@ impl DupResults {
     }
 
     /// Returns a reference to the errors.
-    pub fn errors(&self) -> &[io::Error] {
+    pub fn errors(&self) -> &[DupError] {
         &self.errors
     }
 
@@ -333,7 +323,7 @@ impl DupResults {
         &self,
         dirs: &[PathBuf],
         sizes: Option<&[u64]>,
-    ) -> (Vec<PathBuf>, Vec<io::Error>) {
+    ) -> (Vec<PathBuf>, Vec<DupError>) {
         let mut files = vec![];
         let mut errors = vec![];
 
