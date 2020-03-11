@@ -96,7 +96,7 @@ impl DupResults {
                 };
             }
 
-            let (mut dirs_files, mut errors) = self.get_file_paths_from_dirs(dirs, Some(&sizes));
+            let (mut dirs_files, mut errors) = self.files_within(dirs, Some(&sizes));
 
             if !dirs_files.is_empty() {
                 check_files.append(&mut dirs_files);
@@ -202,7 +202,7 @@ impl DupResults {
             ));
         }
 
-        let (files, mut errors) = self.get_file_paths_from_dirs(dirs, None);
+        let (files, mut errors) = self.files_within(dirs, None);
 
         if !errors.is_empty() {
             self.errors.append(&mut errors);
@@ -322,7 +322,7 @@ impl DupResults {
     /// Returns the paths of all files in the given directories, optionally of
     /// given sizes; and also returns any errors encountered while finding the
     /// file paths.
-    fn get_file_paths_from_dirs(
+    fn files_within(
         &self,
         dirs: &[PathBuf],
         sizes: Option<&[u64]>,
