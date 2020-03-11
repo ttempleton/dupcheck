@@ -9,7 +9,7 @@ pub(crate) trait PathUtilities {
     fn blake2(&self) -> io::Result<String>;
 
     /// Returns all files within a directory, optionally of certain `sizes`.
-    fn files_within(&self, sizes: Option<&[u64]>) -> Result<Vec<PathBuf>, DupError>;
+    fn files_within(&self, sizes: Option<&[u64]>) -> (Vec<PathBuf>, Vec<DupError>);
 }
 
 impl PathUtilities for PathBuf {
@@ -21,31 +21,55 @@ impl PathUtilities for PathBuf {
         Ok(format!("{:x}", hasher.result()))
     }
 
-    fn files_within(&self, sizes: Option<&[u64]>) -> Result<Vec<PathBuf>, DupError> {
-        let read_dir = try_with_path!(self.read_dir(), self);
+    fn files_within(&self, sizes: Option<&[u64]>) -> (Vec<PathBuf>, Vec<DupError>) {
+        let read_dir = match self.read_dir() {
+            Ok(entries) => entries,
+            Err(e) => return (vec![], vec![DupError::new(self.to_path_buf(), e)]),
+        };
+
         let mut files = vec![];
+        let mut errors = vec![];
         let sizes_vec = match sizes {
             Some(sizes_slice) => Vec::from(sizes_slice),
             None => vec![],
         };
 
         for entry in read_dir {
-            let entry = try_with_path!(entry, self);
-            let entry_path = entry.path();
+            let entry_path = match entry {
+                Ok(ent) => ent.path(),
+                Err(e) => {
+                    errors.push(DupError::new(self.to_path_buf(), e));
+                    continue;
+                },
+            };
 
             if entry_path.is_file() {
-                let metadata = try_with_path!(entry_path.metadata(), entry_path);
+                let metadata = match entry_path.metadata() {
+                    Ok(md) => md,
+                    Err(e) => {
+                        errors.push(DupError::new(entry_path, e));
+                        continue;
+                    },
+                };
+
                 let size = metadata.len();
 
                 if sizes.is_none() || sizes_vec.contains(&size) {
                     files.push(entry_path);
                 }
             } else if entry_path.is_dir() {
-                let mut subdir_files = entry_path.files_within(sizes)?;
-                files.append(&mut subdir_files);
+                let (mut sub_files, mut sub_errors) = entry_path.files_within(sizes);
+
+                if !sub_files.is_empty() {
+                    files.append(&mut sub_files);
+                }
+
+                if !sub_errors.is_empty() {
+                    errors.append(&mut sub_errors);
+                }
             }
         }
 
-        Ok(files)
+        (files, errors)
     }
 }

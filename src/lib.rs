@@ -1,8 +1,6 @@
 //! Duplicate file checker.
 #![deny(missing_docs)]
 
-#[macro_use]
-mod macros;
 mod duperror;
 mod utilities;
 
@@ -127,10 +125,15 @@ impl DupResults {
                     }
                 };
 
-                match parent.files_within(Some(&sizes)) {
-                    Ok(mut files) => check_files.append(&mut files),
-                    Err(e) => self.errors.push(e),
-                };
+                let (mut p_files, mut p_errors) = parent.files_within(Some(&sizes));
+
+                if !p_files.is_empty() {
+                    check_files.append(&mut p_files);
+                }
+
+                if !p_errors.is_empty() {
+                    self.errors.append(&mut p_errors);
+                }
             }
         }
 
@@ -328,10 +331,15 @@ impl DupResults {
         let mut errors = vec![];
 
         for dir in dirs {
-            match dir.files_within(sizes) {
-                Ok(mut dir_files) => files.append(&mut dir_files),
-                Err(e) => errors.push(e),
-            };
+            let (mut dir_files, mut dir_errors) = dir.files_within(sizes);
+
+            if !dir_files.is_empty() {
+                files.append(&mut dir_files);
+            }
+
+            if !dir_errors.is_empty() {
+                errors.append(&mut dir_errors);
+            }
         }
 
         (files, errors)
