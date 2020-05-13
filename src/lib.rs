@@ -251,7 +251,7 @@ impl DupResults {
         // ensure we don't waste time on hash checks of those files later.
         let mut sizes: Vec<(u64, Vec<PathBuf>)> = vec![];
 
-        for file in files.iter().filter(|p| p.is_file()) {
+        for file in files {
             let size = match file.metadata() {
                 Ok(metadata) => metadata.len(),
                 Err(e) => {
