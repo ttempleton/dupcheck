@@ -137,7 +137,7 @@ impl DupResults {
             }
         }
 
-        self.files(&check_files)
+        self._files(&check_files)
     }
 
     /// Checks for any duplicate files within the specified directories and
@@ -208,7 +208,7 @@ impl DupResults {
             self.errors.append(&mut errors);
         }
 
-        self.files(&files)
+        self._files(&files)
     }
 
     /// Checks for any duplicates among the specified files and returns the
@@ -246,6 +246,10 @@ impl DupResults {
             ));
         }
 
+        self._files(&files)
+    }
+
+    fn _files(&mut self, files: &[PathBuf]) -> io::Result<()> {
         // Organise the file paths according to file sizes.  Any file with a
         // unique size within the check list can't be a duplicate, so this will
         // ensure we don't waste time on hash checks of those files later.
