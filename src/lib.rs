@@ -286,13 +286,7 @@ impl DupResults {
 
     /// Returns the total number of all paths within all duplicate groups.
     pub fn file_count(&self) -> usize {
-        let mut total = 0;
-
-        for group in &self.duplicates {
-            total += group.file_count();
-        }
-
-        total
+        self.duplicates.iter().fold(0, |acc, g| acc + g.file_count())
     }
 
     /// Returns the paths of all files in the given directories, optionally of
