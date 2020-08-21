@@ -323,16 +323,7 @@ impl DupResults {
 
     /// Returns whether any `DupGroup`s contain the given file path.
     fn contains(&self, path: &PathBuf) -> bool {
-        let mut contains = false;
-
-        for group in &self.duplicates {
-            if group.contains(path) {
-                contains = true;
-                break;
-            }
-        }
-
-        contains
+        self.duplicates.iter().any(|g| g.contains(path))
     }
 
     fn check_valid_paths(&self, files: Option<&[PathBuf]>, dirs: Option<&[PathBuf]>) -> io::Result<()> {
