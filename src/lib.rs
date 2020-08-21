@@ -66,23 +66,7 @@ impl DupResults {
     /// }
     /// ```
     pub fn of(&mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> io::Result<()> {
-        // Return an error if any `files` are not files, or `dirs_opt` contains
-        // any paths that are not directories.
-        for path in files.iter().filter(|p| !p.is_file()) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("{} is not a file", path.display()),
-            ));
-        }
-
-        if let Some(dirs) = dirs_opt {
-            for path in dirs.iter().filter(|p| !p.is_dir()) {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("{} is not a directory", path.display()),
-                ));
-            }
-        }
+        self.check_valid_paths(Some(files), dirs_opt)?;
 
         let mut check_files = vec![];
 
@@ -194,13 +178,7 @@ impl DupResults {
     /// }
     /// ```
     pub fn within(&mut self, dirs: &[PathBuf]) -> io::Result<()> {
-        // Ensure all `dirs` are directories.
-        for path in dirs.iter().filter(|p| !p.is_dir()) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("{} is not a directory", path.display()),
-            ));
-        }
+        self.check_valid_paths(None, Some(dirs))?;
 
         let (files, mut errors) = self.files_within(dirs, None);
 
@@ -238,13 +216,7 @@ impl DupResults {
     /// }
     /// ```
     pub fn files(&mut self, files: &[PathBuf]) -> io::Result<()> {
-        // Make sure we're dealing with files.
-        for path in files.iter().filter(|p| !p.is_file()) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("{} is not a file", path.display()),
-            ));
-        }
+        self.check_valid_paths(Some(files), None)?;
 
         self._files(&files)
     }
@@ -361,6 +333,28 @@ impl DupResults {
         }
 
         contains
+    }
+
+    fn check_valid_paths(&self, files: Option<&[PathBuf]>, dirs: Option<&[PathBuf]>) -> io::Result<()> {
+        if let Some(unwrapped_files) = files {
+            if let Some(path) = unwrapped_files.iter().find(|p| !p.is_file()) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("{} is not a file", path.display()),
+                ));
+            }
+        }
+
+        if let Some(unwrapped_dirs) = dirs {
+            if let Some(path) = unwrapped_dirs.iter().find(|p| !p.is_dir()) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("{} is not a directory", path.display()),
+                ));
+            }
+        }
+
+        Ok(())
     }
 }
 
