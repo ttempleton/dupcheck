@@ -8,6 +8,7 @@ use crate::duperror::DupError;
 use crate::utilities::PathUtilities;
 use std::collections::HashMap;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 
 /// Results of a duplicate file check, containing any duplicate file groups
@@ -67,22 +68,24 @@ impl DupResults {
     ///     // Error handling
     /// }
     /// ```
-    pub fn of(&mut self, files: &[PathBuf], dirs_opt: Option<&[PathBuf]>) -> io::Result<()> {
+    pub fn of<T: AsRef<Path>>(&mut self, files: &[T], dirs_opt: Option<&[T]>) -> io::Result<()> {
+        let file_paths = self.convert_to_path_buf(files);
         self.check_valid_paths(Some(files), dirs_opt)?;
 
         let mut check_files = vec![];
 
         if let Some(dirs) = dirs_opt {
+            let dir_paths = self.convert_to_path_buf(dirs);
             let mut sizes = vec![];
 
-            for file in files {
+            for file in &file_paths {
                 match file.metadata() {
                     Ok(metadata) => sizes.push(metadata.len()),
                     Err(e) => self.errors.push(DupError::new(file.to_path_buf(), e)),
                 };
             }
 
-            let (mut dirs_files, mut errors) = self.files_within(dirs, Some(&sizes));
+            let (mut dirs_files, mut errors) = self.files_within(&dir_paths, Some(&sizes));
 
             if !dirs_files.is_empty() {
                 check_files.append(&mut dirs_files);
@@ -94,14 +97,14 @@ impl DupResults {
 
             // If the directories aren't ancestors of the files being checked,
             // the files won't be in the check list, so we need to add them.
-            for file in files {
+            for file in &file_paths {
                 if !check_files.contains(file) {
                     check_files.push(file.to_path_buf());
                 }
             }
         } else {
             // Check only a file's parent directory for other files of its size.
-            for file in files {
+            for file in &file_paths {
                 let parent = file.parent().unwrap().to_path_buf();
                 let sizes = match file.metadata() {
                     Ok(metadata) => vec![metadata.len()],
@@ -179,10 +182,10 @@ impl DupResults {
     ///     }
     /// }
     /// ```
-    pub fn within(&mut self, dirs: &[PathBuf]) -> io::Result<()> {
+    pub fn within<T: AsRef<Path>>(&mut self, dirs: &[T]) -> io::Result<()> {
         self.check_valid_paths(None, Some(dirs))?;
 
-        let (files, mut errors) = self.files_within(dirs, None);
+        let (files, mut errors) = self.files_within(&self.convert_to_path_buf(dirs), None);
 
         if !errors.is_empty() {
             self.errors.append(&mut errors);
@@ -217,10 +220,10 @@ impl DupResults {
     ///     // Error handling
     /// }
     /// ```
-    pub fn files(&mut self, files: &[PathBuf]) -> io::Result<()> {
+    pub fn files<T: AsRef<Path>>(&mut self, files: &[T]) -> io::Result<()> {
         self.check_valid_paths(Some(files), None)?;
 
-        self._files(&files)
+        self._files(&self.convert_to_path_buf(files))
     }
 
     fn _files(&mut self, files: &[PathBuf]) -> io::Result<()> {
@@ -323,9 +326,15 @@ impl DupResults {
         self.duplicates.iter().any(|g| g.contains(path))
     }
 
-    fn check_valid_paths(&self, files: Option<&[PathBuf]>, dirs: Option<&[PathBuf]>) -> io::Result<()> {
+    fn check_valid_paths<T: AsRef<Path>>(
+        &self,
+        files: Option<&[T]>,
+        dirs: Option<&[T]>,
+    ) -> io::Result<()> {
         if let Some(unwrapped_files) = files {
-            if let Some(path) = unwrapped_files.iter().find(|p| !p.is_file()) {
+            let file_paths = self.convert_to_path_buf(unwrapped_files);
+
+            if let Some(path) = file_paths.iter().find(|p| !p.is_file()) {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("{} is not a file", path.display()),
@@ -334,7 +343,9 @@ impl DupResults {
         }
 
         if let Some(unwrapped_dirs) = dirs {
-            if let Some(path) = unwrapped_dirs.iter().find(|p| !p.is_dir()) {
+            let dir_paths = self.convert_to_path_buf(unwrapped_dirs);
+
+            if let Some(path) = dir_paths.iter().find(|p| !p.is_dir()) {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("{} is not a directory", path.display()),
@@ -343,6 +354,10 @@ impl DupResults {
         }
 
         Ok(())
+    }
+
+    fn convert_to_path_buf<T: AsRef<Path>>(&self, paths: &[T]) -> Vec<PathBuf> {
+        paths.iter().map(|p| p.as_ref().to_path_buf()).collect()
     }
 }
 
