@@ -1,4 +1,4 @@
-use clap::{crate_authors, crate_version, App, Arg, ArgGroup, Values};
+use clap::{arg, ArgGroup, command, Values};
 use std::io;
 use std::path::PathBuf;
 
@@ -34,29 +34,20 @@ fn print_duplicates(dup_list: &dupcheck::DupGroup) {
 }
 
 fn main() {
-    let matches = App::new("dupcheck")
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about("Duplicate file checker")
+    let matches = command!()
         .arg(
-            Arg::with_name("files")
-                .short("o")
-                .long("of")
-                .empty_values(false)
-                .multiple(true)
-                .help("Files to check."),
+            arg!(-o --of <files> "Files to check.")
+                .required(false)
+                .multiple_values(true)
         )
         .arg(
-            Arg::with_name("directories")
-                .short("w")
-                .long("within")
-                .empty_values(false)
-                .multiple(true)
-                .help("Directories to check."),
+            arg!(-w --within <directories> "Directories to check.")
+                .required(false)
+                .multiple_values(true)
         )
         .group(
-            ArgGroup::with_name("methods")
-                .args(&["files", "directories"])
+            ArgGroup::new("methods")
+                .args(&["of", "within"])
                 .required(true)
                 .multiple(true),
         )
@@ -69,8 +60,8 @@ fn main() {
         )
         .get_matches();
 
-    let files = values_to_paths(matches.values_of("files"));
-    let dirs = values_to_paths(matches.values_of("directories"));
+    let files = values_to_paths(matches.values_of("of"));
+    let dirs = values_to_paths(matches.values_of("within"));
 
     let dup_result = get_dup_result(&files, &dirs);
 
