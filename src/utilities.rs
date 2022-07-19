@@ -1,24 +1,20 @@
 use crate::duperror::DupError;
-use blake2::{Blake2b, Digest};
 use std::fs;
 use std::io;
 use std::path::PathBuf;
 
 pub(crate) trait PathUtilities {
-    /// Returns a file's Blake2 hash.
-    fn blake2(&self) -> io::Result<String>;
+    /// Returns a file's BLAKE3 hash.
+    fn blake3(&self) -> io::Result<String>;
 
     /// Returns all files within a directory, optionally of certain `sizes`.
     fn files_within(&self, sizes: Option<&[u64]>) -> (Vec<PathBuf>, Vec<DupError>);
 }
 
 impl PathUtilities for PathBuf {
-    fn blake2(&self) -> io::Result<String> {
+    fn blake3(&self) -> io::Result<String> {
         let bytes = fs::read(self.as_path())?;
-        let mut hasher = Blake2b::new();
-        hasher.input(&bytes);
-
-        Ok(format!("{:x}", hasher.result()))
+        Ok(format!("{}", blake3::hash(&bytes)))
     }
 
     fn files_within(&self, sizes: Option<&[u64]>) -> (Vec<PathBuf>, Vec<DupError>) {

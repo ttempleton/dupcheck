@@ -12,7 +12,7 @@ dupcheck <--of <files>...|--within <directories>...>
 * `--of` used without `--within` will check for duplicates of the files within the files' parent directories.
 * `--within` used without `--of` will check the directories for any duplicate files.
 
-If dupcheck finds duplicate files, it will print the found files in groups identified by the files' Blake2 hashes.
+If dupcheck finds duplicate files, it will print the found files in groups identified by the files' BLAKE3 hashes.
 
 ## Library
 
@@ -26,5 +26,5 @@ See the [documentation](https://docs.rs/dupcheck) for more information.
 
 dupcheck uses the following crates:
 
-* [blake2](https://crates.io/crates/blake2) ~0.8.1
+* [blake3](https://crates.io/crates/blake3) ^1.3.1
 * [clap](https://crates.io/crates/clap) ~2.33.0
