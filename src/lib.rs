@@ -247,33 +247,34 @@ impl DupResults {
         }
 
         // Check hashes of files where more than one file of its size was found.
-        for size in sizes.iter().filter(|s| s.1.len() > 1) {
-            for file in &size.1 {
-                // If this isn't the first check for these `DupResults`, ensure
-                // this file is only checked if its path hasn't been added in a
-                // previous check.
-                if !self.contains(file) {
-                    let hash = match file.blake3() {
-                        Ok(h) => h,
-                        Err(e) => {
-                            self.errors.push(DupError::new(file.to_path_buf(), e));
-                            continue;
-                        }
-                    };
+        let mut hashes: Vec<(String, PathBuf)> = vec![];
+        let mut new_errors: Vec<DupError> = vec![];
 
-                    match self.duplicates.iter().position(|h| h.hash == hash) {
-                        Some(i) => self.duplicates[i].add_file(file.clone()),
-                        None => self.duplicates.push(DupGroup {
-                            hash: hash,
-                            files: vec![file.clone()],
-                        }),
-                    };
-                }
+        for size in sizes.iter().filter(|s| s.1.len() > 1) {
+            // If this isn't the first check for these `DupResults`, ensure
+            // this file is only checked if its path hasn't been added in a
+            // previous check.
+            for file in size.1.iter().filter(|f| !self.contains(f)) {
+                match file.blake3() {
+                    Ok(h) => hashes.push((h, file.clone())),
+                    Err(e) => new_errors.push(DupError::new(file.to_path_buf(), e)),
+                };
             }
+        }
+
+        for (hash, file) in &hashes {
+            match self.duplicates.iter().position(|h| h.hash == *hash) {
+                Some(i) => self.duplicates[i].add_file(file.clone()),
+                None => self.duplicates.push(DupGroup {
+                    hash: hash.clone(),
+                    files: vec![file.clone()],
+                }),
+            };
         }
 
         // Keep only the groups with more than one file.
         self.duplicates.retain(|h| h.file_count() > 1);
+        self.errors.append(&mut new_errors);
 
         Ok(())
     }
