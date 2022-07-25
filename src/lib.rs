@@ -249,17 +249,19 @@ impl DupResults {
         // Check hashes of files where more than one file of its size was found.
         let mut hashes: Vec<(String, PathBuf)> = vec![];
         let mut new_errors: Vec<DupError> = vec![];
+        let files = sizes.iter()
+            .filter(|size| size.1.len() > 1)
+            .flat_map(|size| &size.1)
+            .filter(|file| !self.contains(file));
 
-        for size in sizes.iter().filter(|s| s.1.len() > 1) {
-            // If this isn't the first check for these `DupResults`, ensure
-            // this file is only checked if its path hasn't been added in a
-            // previous check.
-            for file in size.1.iter().filter(|f| !self.contains(f)) {
-                match file.blake3() {
-                    Ok(h) => hashes.push((h, file.clone())),
-                    Err(e) => new_errors.push(DupError::new(file.to_path_buf(), e)),
-                };
-            }
+        // If this isn't the first check for these `DupResults`, ensure
+        // this file is only checked if its path hasn't been added in a
+        // previous check.
+        for file in files {
+            match file.blake3() {
+                Ok(h) => hashes.push((h, file.clone())),
+                Err(e) => new_errors.push(DupError::new(file.to_path_buf(), e)),
+            };
         }
 
         for (hash, file) in &hashes {
