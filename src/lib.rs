@@ -6,7 +6,6 @@ mod utilities;
 
 use crate::duperror::DupError;
 use crate::utilities::PathUtilities;
-use std::collections::HashMap;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -230,7 +229,7 @@ impl DupResults {
         // Organise the file paths according to file sizes.  Any file with a
         // unique size within the check list can't be a duplicate, so this will
         // ensure we don't waste time on hash checks of those files later.
-        let mut file_paths_by_size = HashMap::new();
+        let mut sizes: Vec<(u64, Vec<PathBuf>)> = vec![];
 
         for file in files {
             let size = match file.metadata() {
@@ -241,16 +240,15 @@ impl DupResults {
                 }
             };
 
-            if !file_paths_by_size.contains_key(&size) {
-                file_paths_by_size.insert(size, vec![]);
-            }
-
-            file_paths_by_size.get_mut(&size).unwrap().push(file.clone());
+            match sizes.iter().position(|s| s.0 == size) {
+                Some(i) => sizes[i].1.push(file.clone()),
+                None => sizes.push((size, vec![file.clone()])),
+            };
         }
 
         // Check hashes of files where more than one file of its size was found.
-        for paths in file_paths_by_size.values().filter(|v| v.len() > 1) {
-            for file in paths {
+        for size in sizes.iter().filter(|s| s.1.len() > 1) {
+            for file in &size.1 {
                 // If this isn't the first check for these `DupResults`, ensure
                 // this file is only checked if its path hasn't been added in a
                 // previous check.
