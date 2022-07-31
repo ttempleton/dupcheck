@@ -36,7 +36,7 @@ impl PathUtilities for PathBuf {
                 Err(e) => {
                     errors.push(DupError::new(self.to_path_buf(), e));
                     continue;
-                },
+                }
             };
 
             if entry_path.is_file() {
@@ -45,7 +45,7 @@ impl PathUtilities for PathBuf {
                     Err(e) => {
                         errors.push(DupError::new(entry_path, e));
                         continue;
-                    },
+                    }
                 };
 
                 let size = metadata.len();

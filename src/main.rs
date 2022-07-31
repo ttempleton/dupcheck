@@ -1,4 +1,4 @@
-use clap::{arg, ArgGroup, command, Values};
+use clap::{arg, command, ArgGroup, Values};
 use std::io;
 use std::path::PathBuf;
 
@@ -38,12 +38,12 @@ fn main() {
         .arg(
             arg!(-o --of <files> "Files to check.")
                 .required(false)
-                .multiple_values(true)
+                .multiple_values(true),
         )
         .arg(
             arg!(-w --within <directories> "Directories to check.")
                 .required(false)
-                .multiple_values(true)
+                .multiple_values(true),
         )
         .group(
             ArgGroup::new("methods")

@@ -249,7 +249,8 @@ impl DupResults {
         // Check hashes of files where more than one file of its size was found.
         let mut hashes: Vec<(String, PathBuf)> = vec![];
         let mut new_errors: Vec<DupError> = vec![];
-        let files = sizes.iter()
+        let files = sizes
+            .iter()
             .filter(|size| size.1.len() > 1)
             .flat_map(|size| &size.1)
             .filter(|file| !self.contains(file));
@@ -293,7 +294,9 @@ impl DupResults {
 
     /// Returns the total number of all paths within all duplicate groups.
     pub fn file_count(&self) -> usize {
-        self.duplicates.iter().fold(0, |acc, g| acc + g.file_count())
+        self.duplicates
+            .iter()
+            .fold(0, |acc, g| acc + g.file_count())
     }
 
     /// Returns the paths of all files in the given directories, optionally of
